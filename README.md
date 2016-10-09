@@ -43,7 +43,8 @@ Don't blame me if it changes on a daily basis. But rest assured I'm lazy don't e
 Even as it is called Daemon it is not yet that far. It is still under development but systemd might be OK with the current state.
 
 ## ToDo
-That would be quiet a long list
+That would be quiet a long list:
+
 1. Make it a real daemon
 2. Allow parameters for rotation/fly events forwarded to the command (e.g. "mpc volume +%d")
 3. Multiple event-levels. Changing with fly-left/right the set of commands used (e.g. switch between controlling the light and controlling the music). This might change the current config-file format
