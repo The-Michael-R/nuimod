@@ -383,7 +383,7 @@ static void my_cb_function(const uint characteristic, const int value, const uns
 
       // Why does the rm.so contain values outside the buffer length as match (and not -1)?
       if(matches[0].rm_so >= 0 && matches[0].rm_so < BUFFER_LEN) {
-	nuimo_set_led(event_description->characteristic[characteristic].command[dir].action_config[i].pattern, 0x80, 50);
+	nuimo_set_led(event_description->characteristic[characteristic].command[dir].action_config[i].pattern, 0x80, 50, 1);
 	return;
       }
       i++;

@@ -18,13 +18,14 @@ nuimod:	$(OBJ)
 	$(CC) $(CFLAGS) -o $(BIN) $(OBJ) $(LDFLAGS)
 
 nuimo_inc:
-	cd inc && make
+	cd inc && make nuimo.o
 
 %.o:	%.c
 	$(CC) $(CFLAGS) -c $<
 
 
 clean:
+	cd inc && make clean
 	rm -rf $(BIN) $(OBJ)
 
 .PHONY:	clean all
