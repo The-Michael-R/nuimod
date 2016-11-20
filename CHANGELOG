@@ -1,0 +1,6 @@
+2016-11-20 The-Michael-R <The-Michael-R@users.noreply.github.com>
+	* nuimo.c (my_cb_function):
+	Changed: Adapted to the nuimo_set_led changes in nuimolibrary.
+
+	* Makefile:
+	Changed: Optimized the makefile.
