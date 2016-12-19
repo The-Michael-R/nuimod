@@ -3,8 +3,15 @@ Deamon to use the Nuimo to execute linux commands/scripts.
 
 Currently the basic functionality is given. With the current configuration file it controls a local running mpd (Music Player Daemon) and reacts to the return values.
 
+
+## Warning
+It is currently under some development and not cleaned up (e.g. the Makefile has a problem, just cp nuimo.o inc/nuimo.o and make).
+Otherwise it works nicely. But some things might change if I find time.
+
+
 ## Requires
 As the nuimo-SDK depends on BlueZ 5.40 or later the usable linux distributions are a bit limited. ArchLinux is working fine.
+
 
 ## Config file
 The nuimod.config file is read after start, no make run required.

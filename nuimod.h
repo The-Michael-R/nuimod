@@ -6,8 +6,8 @@
 #include <libconfig.h>
 #include <glib-unix.h>
 
-#include "inc/nuimo.h"
-
+//#include "inc/nuimo.h"
+#include "nuimo_communication.h"
 
 /**
  * Debug-printouts in case the compiler has the option -DDEBUG or 'make debug' is used.

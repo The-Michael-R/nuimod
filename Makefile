@@ -3,9 +3,9 @@ CFLAGS  = -I./inc -Wall -O3 `pkg-config --cflags glib-2.0 libconfig`
 LDFLAGS = -I./inc `pkg-config --libs glib-2.0 gio-2.0 libconfig`
 DEPENDFILE = .depend
 
-SRC = nuimod.c 
+SRC = nuimod.c nuimo_communication.c
 
-OBJ = nuimod.o inc/nuimo.o
+OBJ = nuimod.o nuimo_communication.o inc/nuimo.o
 
 BIN = nuimod
 

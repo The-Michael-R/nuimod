@@ -312,121 +312,111 @@ static gboolean cb_termination(gpointer data) {
   DEBUG_PRINT(("cb_termination\n"));
   
   g_main_loop_quit(data);
+  nuimo_disconnect();
 
   return FALSE;
 }
 
 
 /**
- * Main example callback function used to execute user actions in case the Nuimo characteristics
- * send a change-value notification. To install this function use ::nuimo_init_cb_function
+ * This function is called approx. every 100ms (not catching up delayed events). It empties the
+ * whole buffer which may be accumulated since the last call.
  *
- * @param characteristic The characteristic based on ::nuimo_chars_e
- * @param value          Any decimal returnvalue from the Nuimo (in case of SWIPE/TOUCH events the value is 0)
- * @param dir            Indicated the direction of the received event. based on \ref NUIMO_DIRECTIONS
- * @param usr_data       THis is supposed to be the pointer to the event_description structure
+ * @param usr_data       This is supposed to be the pointer to the event_description structure
  * @see cb_change_val_notify
- * @see nuimo_init_cb_function
  */
-static void my_cb_function(const uint characteristic, const int value, const unsigned int dir, const void *user_data) {
-  DEBUG_PRINT(("my_cb_function\n"));
+static gboolean cb_main_timing(void *user_data) {
+  //  DEBUG_PRINT(("cb_main_timing\n"));
   
   event_description_s *event_description;
   char buffer[BUFFER_LEN];
   unsigned int i;
   regmatch_t matches[1];
+  unsigned int characteristic;
+  unsigned int dir;
+  int value;
+  int regex_res;
   
   event_description = (event_description_s*) user_data;
-    
-  // first check if event is covered in the event_description
-  if (event_description == NULL) {
-    return;
-  }
 
-  memset(buffer, '\0', BUFFER_LEN);
-  
-  switch (characteristic) {
-  case NUIMO_BATTERY:
-    if (value < event_description->characteristic[characteristic].limit) {
+  // Execute all messages which came in since last time
+  while (pop_buffer(&characteristic, & dir, &value)) {
+    
+    memset(buffer, '\0', BUFFER_LEN);
+    
+    switch (characteristic) {
+    case NUIMO_BATTERY:
+      if (value < event_description->characteristic[characteristic].limit) {
+	if (event_description->characteristic[characteristic].command[dir].command != NULL) {
+	  exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
+	}
+      }
+      break;
+
+    case NUIMO_ROTATION:
+      if (abs(value) > event_description->characteristic[characteristic].threshold ) {
+	if (event_description->characteristic[characteristic].command[dir].command != NULL) {
+	  exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
+	}
+      }
+      break;
+    
+    case NUIMO_BUTTON:
+    case NUIMO_SWIPE:
+    case NUIMO_FLY:
       if (event_description->characteristic[characteristic].command[dir].command != NULL) {
 	exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
       }
     }
-    break;
 
-  case NUIMO_ROTATION:
-    if (abs(value) > event_description->characteristic[characteristic].threshold ) {
-      if (event_description->characteristic[characteristic].command[dir].command != NULL) {
-	exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
+    if (buffer[0]) {
+      i = 0;
+
+      while(i < event_description->characteristic[characteristic].command[dir].num_actions) {
+	regex_res = regexec(&event_description->characteristic[characteristic].command[dir].action_config[i].regex_preg,
+			    buffer,
+			    1,
+			    matches,
+			    0);
+
+	if(!regex_res) {
+	  nuimo_set_led(event_description->characteristic[characteristic].command[dir].action_config[i].pattern, 0x80, 50, 1);
+	  return TRUE;
+	}
+	i++;
       }
     }
-    break;
-    
-  case NUIMO_BUTTON:
-  case NUIMO_SWIPE:
-  case NUIMO_FLY:
-    if (event_description->characteristic[characteristic].command[dir].command != NULL) {
-      exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
-    }
-    break; 
   }
-
-  if (buffer[0]) {
-    i = 0;
-
-    while(i < event_description->characteristic[characteristic].command[dir].num_actions) {
-      regexec(&event_description->characteristic[characteristic].command[dir].action_config[i].regex_preg,
-	      buffer,
-	      1,
-	      matches,
-	      0);
-
-      // Why does the rm.so contain values outside the buffer length as match (and not -1)?
-      if(matches[0].rm_so >= 0 && matches[0].rm_so < BUFFER_LEN) {
-	nuimo_set_led(event_description->characteristic[characteristic].command[dir].action_config[i].pattern, 0x80, 50, 1);
-	return;
-      }
-      i++;
-    }
-  }
-}
-
-
-static void start_nuimo(event_description_s *event_description) {
-  DEBUG_PRINT(("start_nuimo\n"));
- 
-  GMainLoop *loop;
- 
-  nuimo_init_status();
-  nuimo_init_cb_function(my_cb_function, event_description);
-  
-  nuimo_init_bt();  // Not much will happen until the g_main_loop is started
-
-  loop = g_main_loop_new(NULL, FALSE);
-  g_unix_signal_add (SIGINT,  cb_termination, loop); // Calling a private FKT!
-  g_main_loop_run(loop);
-
-  nuimo_disconnect();
-
-  return;
+  return TRUE;
 }
 
 
 int main (int argc, char **argv) {
   DEBUG_PRINT(("main\n"));
 
+  GMainLoop *loop;
   event_description_s *event_description;
 
+  loop = g_main_loop_new(NULL, FALSE);
+  
   event_description = malloc(sizeof(event_description_s));
-  if (!event_description) {return EXIT_FAILURE;}
-
+  if (!event_description) {
+    return EXIT_FAILURE;
+  }
   memset(event_description, '\0', sizeof(event_description_s));
 
   init_description(event_description);
 
   read_config(".", "nuimod.config", event_description);
 
-  start_nuimo(event_description);
+  establish_nuimo_comm();
+
+  // Adding additional signals to the GMainLoop
+  g_unix_signal_add (SIGINT,  cb_termination, loop);
+  g_timeout_add(100, cb_main_timing, event_description);
+
+  // Start GMainLoop
+  g_main_loop_run(loop);
   
   return EXIT_SUCCESS;
 }

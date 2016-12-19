@@ -1,5 +1,14 @@
+2016-12-19  The-Michael-R <The-Michael-R@users.noreply.github.com>
+	* nuimod.c:
+	Changed: Bigger changes to improve responsibility by introducing a buffer
+
+	* nuimo_communication.c:
+	New: Seperated the Nuimo communication from the main code.
+	New: Imlpemented some kind of inteligent buffer. Currently only for Rotation: Accumulation of pending rotation-events
+
+
 2016-11-20 The-Michael-R <The-Michael-R@users.noreply.github.com>
-	* nuimo.c (my_cb_function):
+	* nuimod.c (my_cb_function):
 	Changed: Adapted to the nuimo_set_led changes in nuimolibrary.
 
 	* Makefile:
