@@ -1,6 +1,10 @@
 #include "nuimod.h"
 
-
+/**
+ * Debug function; it just prints out the imported config file structure.
+ *
+ * @param event_description The structure that holds the configuration.
+ */
 static void print_ptr(event_description_s *event_description) {
   DEBUG_PRINT(("print_ptr\n"));
 
@@ -25,7 +29,14 @@ static void print_ptr(event_description_s *event_description) {
   }
 }
 
-
+/**
+ * This function executes the given command and receives the STDOUT
+ *
+ * @param command  The command which will be executed
+ * @param buffer   Buffer which receives the STDOUT message of the executed command
+ * @param length   length of the ::buffer. If the received answer is longer the content gets truncated.
+ * @return Returns EXIT_FAILURE if any problems executing the command occoured or EXIT_SUCCESS
+ */
 static int exec_command(const char *command, char *buffer, const unsigned int length) {
   DEBUG_PRINT(("exec_command\n"));
 
@@ -51,7 +62,15 @@ static int exec_command(const char *command, char *buffer, const unsigned int le
   return EXIT_SUCCESS;
 }
 
-
+/**
+ * This function is used to convert the hex-denoted string into the required bitmap.
+ *
+ * Note: Probably this is probably the dumbest way (DTWTF worthy) to do this. But it works ;-)
+ *
+ * @param string   An 22 char long hex string holding the LED-Matrix pattern.
+ * @param pattern  The 11 char long converted pattern.
+ * @return Returns EXIT_FAILURE if the provided string has the wrong length or EXIT_SUCCESS
+ */
 static int str_to_pattern(const char *string, unsigned char *pattern) {
   DEBUG_PRINT(("str_to_pattern\n"));
 
@@ -79,7 +98,14 @@ static int str_to_pattern(const char *string, unsigned char *pattern) {
   return EXIT_SUCCESS;
 }
 
-
+/**
+ * Evaluate the config file reactions to the given command.
+ * It read the reactions, if present, and pre-compile the regular expressions.
+ *
+ * @param  config_setting The sub-structure of the configuration for the curren command which will be evaluated
+ * @param  command        The pointer to the structure we store the pre-compiled regex into.
+ * @return Returns EXIT_FAILURE or EXIT_SUCCESS
+ */
 static int get_reactions(config_setting_t *config_setting, command_s *command) {
   DEBUG_PRINT(("get_reactions\n"));
 
@@ -134,7 +160,14 @@ static int get_reactions(config_setting_t *config_setting, command_s *command) {
   return EXIT_SUCCESS;
 }
 
-
+/**
+ * Evaluating the configuration file looking for the commands that should be executed in case the Nuimo emits a event
+ *
+ * @param config_setting This is the preloaded config file which will be evvaluated
+ * @param command        The structure of possible Nuimo actions we need to cover; no need to use them all
+ * @param command_list   The pointer to the structure that will be used during operation. Holding the commands, actions, ...
+ * @return Returns EXIT_FAILURE or EXIT_SUCCESS
+ */
 static int get_commands(config_setting_t *config_setting, command_s command[], const char *command_list[]) {
   DEBUG_PRINT(("get_commands\n"));
 
@@ -145,7 +178,6 @@ static int get_commands(config_setting_t *config_setting, command_s command[], c
 
   i = 0;
   while(command_list[i]) {
-    printf("command_list = %s\n", command_list[i]);
     local_setting = config_setting_lookup(config_setting, command_list[i]);
     if(!local_setting) {
       i++;
@@ -169,6 +201,13 @@ static int get_commands(config_setting_t *config_setting, command_s command[], c
 }
 
 
+/**
+ * Evaluating the config file. Needs to be called for each possible characteristic of the Nuimo that can issue a event
+ *
+ * @param my_configuration The structure of the config file which will be evaluated.
+ * @param event            The pointer to the event which needs to be filled by this function
+ * @param charateristic    The current characteristic
+ */
 static void get_config(const config_t my_configuration, event_s *event, const unsigned int characterisic) {
   DEBUG_PRINT(("get_config\n"));
   

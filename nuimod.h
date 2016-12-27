@@ -6,7 +6,6 @@
 #include <libconfig.h>
 #include <glib-unix.h>
 
-//#include "inc/nuimo.h"
 #include "nuimo_communication.h"
 
 /**
@@ -102,11 +101,8 @@ typedef struct {
 } event_s;
 
 /**
- * Wasting a bit of memory here, but the performance might be better and the code is much more compact. paghetti-code anyone? 
+ * Wasting a bit of memory here, but the performance might be better and the code is much more compact. Spaghetti-code anyone? 
  */
 typedef struct {
   event_s characteristic[NUIMO_ENTRIES_LEN];
 } event_description_s;
-  
-
-
