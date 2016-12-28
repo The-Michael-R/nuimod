@@ -65,8 +65,6 @@ static int exec_command(const char *command, char *buffer, const unsigned int le
 /**
  * This function is used to convert the hex-denoted string into the required bitmap.
  *
- * Note: Probably this is probably the dumbest way (DTWTF worthy) to do this. But it works ;-)
- *
  * @param string   An 22 char long hex string holding the LED-Matrix pattern.
  * @param pattern  The 11 char long converted pattern.
  * @return Returns EXIT_FAILURE if the provided string has the wrong length or EXIT_SUCCESS
@@ -74,25 +72,35 @@ static int exec_command(const char *command, char *buffer, const unsigned int le
 static int str_to_pattern(const char *string, unsigned char *pattern) {
   DEBUG_PRINT(("str_to_pattern\n"));
 
-  unsigned int i;
-  char         buffer[3];
-  
-  buffer[0] = '\0';
-  buffer[1] = '\0';
-  buffer[2] = '\0';
-
+  unsigned int  i;
+  unsigned char buffer;  
   
   if (strlen(string) != 22) {
-    fprintf(stderr, "EE: String has wrong length!\n");
+    fprintf(stderr, "EE: LED-Pattern string has wrong length (22)!\n");
     return EXIT_FAILURE;
   }
-  
+
   i = 0;
-  while(string[i*2]) {
-    buffer[0] = string[i*2];
-    buffer[1] = string[i*2 + 1];
-    pattern[i] = strtol(buffer, NULL, 16);
+  buffer = string[0] | 0b00100000; // Make the char lower case
+  
+  while (string[i]) {    
+    if (buffer >= '0' && buffer <= '9') {
+      buffer = buffer - '0';
+    } else if (buffer >= 'a' && buffer <= 'f') {
+      buffer = buffer - 'a' + 10;
+    } else {
+      fprintf(stderr, "EE: LED-Pattern string holds unknown chars (0...9, A...F, a...f): %s!\n", string);
+      return EXIT_FAILURE;
+    }
+
+    if ((i & 1) == 1) {
+      pattern[(i-1)/2] += buffer;
+    } else {
+      pattern[i/2] = buffer * 16;
+    }
+
     i++;
+    buffer = string[i] | 0b00100000;
   }
   
   return EXIT_SUCCESS;
@@ -208,7 +216,7 @@ static int get_commands(config_setting_t *config_setting, command_s command[], c
  * @param event            The pointer to the event which needs to be filled by this function
  * @param charateristic    The current characteristic
  */
-static void get_config(const config_t my_configuration, event_s *event, const unsigned int characterisic) {
+static int get_config(const config_t my_configuration, event_s *event, const unsigned int characterisic) {
   DEBUG_PRINT(("get_config\n"));
   
   config_setting_t  *config_setting;
@@ -217,7 +225,7 @@ static void get_config(const config_t my_configuration, event_s *event, const un
   
   config_setting = config_lookup(&my_configuration, N_NUIMO[characterisic]);
   if (!config_setting) {
-    return;
+    return EXIT_FAILURE;
   }
 
   if (characterisic == NUIMO_BATTERY) {
@@ -225,11 +233,11 @@ static void get_config(const config_t my_configuration, event_s *event, const un
     
     if (ret_val == CONFIG_FALSE ) {
       fprintf(stderr, "EE: NUIMO_BATTERY configuration without limit\n");
-      return;
+      return EXIT_FAILURE;
       
     } else if (temp > 100 || temp < 0) {
       fprintf(stderr, "EE: NUIMO_BATTERY.limit must be between 0 and 100\n");
-      return;
+      return EXIT_FAILURE;
     }
     event->limit = (unsigned int) temp;
     
@@ -238,7 +246,7 @@ static void get_config(const config_t my_configuration, event_s *event, const un
     
     if (ret_val == CONFIG_FALSE ) {
       fprintf(stderr, "EE: NUIMO_ROTATION configuration without limit\n");
-      return;
+      return EXIT_FAILURE;
     }
     event->threshold = (unsigned int) temp;
   }
@@ -256,13 +264,8 @@ static void get_config(const config_t my_configuration, event_s *event, const un
   } else {
     ret_val = EXIT_SUCCESS;
   }
-  
-  if (ret_val == EXIT_FAILURE) {
-    fprintf(stderr, "EE: %s problems reading command/reaction.\n", N_NUIMO[characterisic]);
-    return;
-  }
-  
-  return;
+    
+  return ret_val;
 }
 
 
@@ -289,7 +292,9 @@ static int read_config(const char *path, const char *filename, event_description
 
   for (i = 0; i < NUIMO_ENTRIES_LEN; i++) {
     if (i != BT_ADAPTER && i != NUIMO && i != NUIMO_LED) {
-      get_config(my_configuration, &event_description->characteristic[i], i);
+      if (get_config(my_configuration, &event_description->characteristic[i], i) == EXIT_FAILURE) {
+	return EXIT_FAILURE;
+      }
     }
   }
 
@@ -347,7 +352,7 @@ static int init_description (event_description_s *event_description) {
  *
  * @param data Is the g_main_loop handle returnes by ::g_main_loop_new
  */
-static gboolean cb_termination(gpointer data) {
+ static gboolean cb_termination(gpointer data) {
   DEBUG_PRINT(("cb_termination\n"));
   
   g_main_loop_quit(data);
@@ -446,7 +451,9 @@ int main (int argc, char **argv) {
 
   init_description(event_description);
 
-  read_config(".", "nuimod.config", event_description);
+  if (read_config(".", "nuimod.config", event_description) == EXIT_FAILURE) {
+    return EXIT_FAILURE;
+  }
 
   establish_nuimo_comm();
 

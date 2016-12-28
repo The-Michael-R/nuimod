@@ -1,3 +1,11 @@
+2016-12-28  The-Michael-R <The-Michael-R@users.noreply.github.com>
+	* nuimo.c:
+	Added: Improved error handling (a bit)
+
+	* nuimod.c (str_to_pattern):
+	Changed: Improved transformation which might produce less headbanging for people who looks at it
+
+
 2016-12-27  The-Michael-R <The-Michael-R@users.noreply.github.com>
 	* General:
 	Added more comments for a later doxygen usage.
