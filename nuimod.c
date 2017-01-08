@@ -10,20 +10,20 @@ static void print_ptr(event_description_s *event_description) {
 
   unsigned int i;
   unsigned int j;
-  
+
   printf("event_description = %p\n", event_description);
   if (event_description) {
     for (i = 0; i < NUIMO_ENTRIES_LEN; i++) {
       printf("  ->characteristic[%s].command  = %p\n", N_NUIMO[i], event_description->characteristic[i].command);
       printf("       (limit = %i; threshold = %i)\n",
-	     event_description->characteristic[i].limit,
-	     event_description->characteristic[i].threshold);
-      
+       event_description->characteristic[i].limit,
+       event_description->characteristic[i].threshold);
+
       for (j = 0; j < event_description->characteristic[i].num_commands; j++) {
-	printf("    -->command[%i].command  = %p (%s)\n",
-	       j,
-	       event_description->characteristic[i].command[j].command,
-	       event_description->characteristic[i].command[j].command);
+  printf("    -->command[%i].command  = %p (%s)\n",
+         j,
+         event_description->characteristic[i].command[j].command,
+         event_description->characteristic[i].command[j].command);
       }
     }
   }
@@ -42,7 +42,7 @@ static int exec_command(const char *command, char *buffer, const unsigned int le
 
   FILE *file_buffer;
   char line[128];
-  unsigned int position; 
+  unsigned int position;
 
   file_buffer = popen(command, "r");
   if (!file_buffer) {
@@ -73,17 +73,17 @@ static int str_to_pattern(const char *string, unsigned char *pattern) {
   DEBUG_PRINT(("str_to_pattern\n"));
 
   unsigned int  i;
-  unsigned char buffer;  
-  
+  unsigned char buffer;
+
   if (strlen(string) != 22) {
-    fprintf(stderr, "EE: LED-Pattern string has wrong length (22)!\n");
+    fprintf(stderr, "EE: LED-Pattern string has wrong length (22)%s!\n", string);
     return EXIT_FAILURE;
   }
 
   i = 0;
   buffer = string[0] | 0b00100000; // Make the char lower case
-  
-  while (string[i]) {    
+
+  while (string[i]) {
     if (buffer >= '0' && buffer <= '9') {
       buffer = buffer - '0';
     } else if (buffer >= 'a' && buffer <= 'f') {
@@ -102,7 +102,7 @@ static int str_to_pattern(const char *string, unsigned char *pattern) {
     i++;
     buffer = string[i] | 0b00100000;
   }
-  
+
   return EXIT_SUCCESS;
 }
 
@@ -123,7 +123,7 @@ static int get_reactions(config_setting_t *config_setting, command_s *command) {
   unsigned int      ret_val;
   const char*       temp;
   char error_msg[BUFFER_LEN];
-  
+
   local_setting = config_setting_lookup(config_setting, "reaction");
   if (!local_setting) {
     return EXIT_SUCCESS;
@@ -135,23 +135,23 @@ static int get_reactions(config_setting_t *config_setting, command_s *command) {
   i = 0;
   while(i < command->num_actions) {
     node = config_setting_get_elem(local_setting, i);
-    
+
     ret_val = config_setting_lookup_string(node, "regex", &temp);
     if (ret_val == CONFIG_FALSE) {
       return EXIT_FAILURE;
     }
-    
+
     ret_val = regcomp(&command->action_config[i].regex_preg,
-		      temp,
-		      REG_NEWLINE);
-    
+          temp,
+          REG_NEWLINE);
+
     if (ret_val != 0) {
-      	regerror (ret_val , &command->action_config[i].regex_preg, error_msg, BUFFER_LEN);
+        regerror (ret_val , &command->action_config[i].regex_preg, error_msg, BUFFER_LEN);
         fprintf(stderr, "EE: Regex error compiling '%s': %s\n", temp, error_msg);
         return 1;
-	return EXIT_FAILURE;
+  return EXIT_FAILURE;
     }
-    
+
     ret_val = config_setting_lookup_string(node, "pattern", &temp);
     if (ret_val == CONFIG_FALSE) {
       return EXIT_FAILURE;
@@ -162,9 +162,9 @@ static int get_reactions(config_setting_t *config_setting, command_s *command) {
       return EXIT_FAILURE;
     }
 
-    i++;  
+    i++;
   }
-  
+
   return EXIT_SUCCESS;
 }
 
@@ -191,15 +191,15 @@ static int get_commands(config_setting_t *config_setting, command_s command[], c
       i++;
       continue;
     }
-    
+
     ret_val = config_setting_lookup_string(local_setting, "command", &temp);
     if (ret_val == CONFIG_TRUE) {
       command[i].command = strdup(temp);
 
       ret_val = get_reactions(local_setting, &command[i]);
       if (ret_val == EXIT_FAILURE) {
-	fprintf(stderr, "EE: Problems with reactions at %s\n", command_list[i]);
-	return EXIT_FAILURE;
+  fprintf(stderr, "EE: Problems with reactions at %s\n", command_list[i]);
+  return EXIT_FAILURE;
       }
     }
     i++;
@@ -218,11 +218,11 @@ static int get_commands(config_setting_t *config_setting, command_s command[], c
  */
 static int get_config(const config_t my_configuration, event_s *event, const unsigned int characterisic) {
   DEBUG_PRINT(("get_config\n"));
-  
+
   config_setting_t  *config_setting;
   int                temp;
   int                ret_val;
-  
+
   config_setting = config_lookup(&my_configuration, N_NUIMO[characterisic]);
   if (!config_setting) {
     return EXIT_FAILURE;
@@ -230,20 +230,20 @@ static int get_config(const config_t my_configuration, event_s *event, const uns
 
   if (characterisic == NUIMO_BATTERY) {
     ret_val = config_setting_lookup_int(config_setting, "limit", &temp);
-    
+
     if (ret_val == CONFIG_FALSE ) {
       fprintf(stderr, "EE: NUIMO_BATTERY configuration without limit\n");
       return EXIT_FAILURE;
-      
+
     } else if (temp > 100 || temp < 0) {
       fprintf(stderr, "EE: NUIMO_BATTERY.limit must be between 0 and 100\n");
       return EXIT_FAILURE;
     }
     event->limit = (unsigned int) temp;
-    
+
   } else if (characterisic == NUIMO_ROTATION) {
     ret_val = config_setting_lookup_int(config_setting, "threshold", &temp);
-    
+
     if (ret_val == CONFIG_FALSE ) {
       fprintf(stderr, "EE: NUIMO_ROTATION configuration without limit\n");
       return EXIT_FAILURE;
@@ -264,28 +264,28 @@ static int get_config(const config_t my_configuration, event_s *event, const uns
   } else {
     ret_val = EXIT_SUCCESS;
   }
-    
+
   return ret_val;
 }
 
 
 static int read_config(const char *path, const char *filename, event_description_s *event_description) {
   DEBUG_PRINT(("read_config\n"));
-  
+
   config_t my_configuration;
   int      ret_val;
   unsigned int i;
-  
+
   config_init(&my_configuration);
 
   ret_val = config_read_file(&my_configuration, filename);
- 
+
   if (ret_val == CONFIG_FALSE) {
     fprintf(stderr,
-	    "EE: Error in configuration file:\n  %s in %s:%i\n",
-	    config_error_text(&my_configuration),
-	    config_error_file (&my_configuration),
-	    config_error_line(&my_configuration));
+      "EE: Error in configuration file:\n  %s in %s:%i\n",
+      config_error_text(&my_configuration),
+      config_error_file (&my_configuration),
+      config_error_line(&my_configuration));
     config_destroy(&my_configuration);
     return EXIT_FAILURE;
   }
@@ -293,7 +293,7 @@ static int read_config(const char *path, const char *filename, event_description
   for (i = 0; i < NUIMO_ENTRIES_LEN; i++) {
     if (i != BT_ADAPTER && i != NUIMO && i != NUIMO_LED) {
       if (get_config(my_configuration, &event_description->characteristic[i], i) == EXIT_FAILURE) {
-	return EXIT_FAILURE;
+  return EXIT_FAILURE;
       }
     }
   }
@@ -311,7 +311,7 @@ static int init_description (event_description_s *event_description) {
   unsigned int i;
 
   for (type_cnt = 0; type_cnt < NUIMO_ENTRIES_LEN; type_cnt++) {
-    
+
     if (type_cnt == NUIMO_BATTERY) {
       element_cnt = 1;
     } else if (type_cnt == NUIMO_BUTTON) {
@@ -332,11 +332,11 @@ static int init_description (event_description_s *event_description) {
 
     if (element_cnt > 0) {
       event_description->characteristic[type_cnt].command = malloc(sizeof(command_s) * element_cnt);
-      
+
       for (i = 0; i < element_cnt; i++) {
-	event_description->characteristic[type_cnt].command[i].command       = NULL;
-	event_description->characteristic[type_cnt].command[i].num_actions   = 0;
-	event_description->characteristic[type_cnt].command[i].action_config = NULL;
+  event_description->characteristic[type_cnt].command[i].command       = NULL;
+  event_description->characteristic[type_cnt].command[i].num_actions   = 0;
+  event_description->characteristic[type_cnt].command[i].action_config = NULL;
       }
     } else {
       event_description->characteristic[type_cnt].command      = NULL;
@@ -354,7 +354,7 @@ static int init_description (event_description_s *event_description) {
  */
  static gboolean cb_termination(gpointer data) {
   DEBUG_PRINT(("cb_termination\n"));
-  
+
   g_main_loop_quit(data);
   nuimo_disconnect();
 
@@ -371,7 +371,7 @@ static int init_description (event_description_s *event_description) {
  */
 static gboolean cb_main_timing(void *user_data) {
   //  DEBUG_PRINT(("cb_main_timing\n"));
-  
+
   event_description_s *event_description;
   char buffer[BUFFER_LEN];
   unsigned int i;
@@ -380,36 +380,36 @@ static gboolean cb_main_timing(void *user_data) {
   unsigned int dir;
   int value;
   int regex_res;
-  
+
   event_description = (event_description_s*) user_data;
 
   // Execute all messages which came in since last time
   while (pop_buffer(&characteristic, & dir, &value)) {
-    
+
     memset(buffer, '\0', BUFFER_LEN);
-    
+
     switch (characteristic) {
     case NUIMO_BATTERY:
       if (value < event_description->characteristic[characteristic].limit) {
-	if (event_description->characteristic[characteristic].command[dir].command != NULL) {
-	  exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
-	}
+  if (event_description->characteristic[characteristic].command[dir].command != NULL) {
+    exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
+  }
       }
       break;
 
     case NUIMO_ROTATION:
       if (abs(value) > event_description->characteristic[characteristic].threshold ) {
-	if (event_description->characteristic[characteristic].command[dir].command != NULL) {
-	  exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
-	}
+  if (event_description->characteristic[characteristic].command[dir].command != NULL) {
+    exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
+  }
       }
       break;
-    
+
     case NUIMO_BUTTON:
     case NUIMO_SWIPE:
     case NUIMO_FLY:
       if (event_description->characteristic[characteristic].command[dir].command != NULL) {
-	exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
+  exec_command(event_description->characteristic[characteristic].command[dir].command, buffer, BUFFER_LEN);
       }
     }
 
@@ -417,17 +417,17 @@ static gboolean cb_main_timing(void *user_data) {
       i = 0;
 
       while(i < event_description->characteristic[characteristic].command[dir].num_actions) {
-	regex_res = regexec(&event_description->characteristic[characteristic].command[dir].action_config[i].regex_preg,
-			    buffer,
-			    1,
-			    matches,
-			    0);
+  regex_res = regexec(&event_description->characteristic[characteristic].command[dir].action_config[i].regex_preg,
+          buffer,
+          1,
+          matches,
+          0);
 
-	if(!regex_res) {
-	  nuimo_set_led(event_description->characteristic[characteristic].command[dir].action_config[i].pattern, 0x80, 50, 1);
-	  return TRUE;
-	}
-	i++;
+  if(!regex_res) {
+    nuimo_set_led(event_description->characteristic[characteristic].command[dir].action_config[i].pattern, 0x80, 50, 1);
+    return TRUE;
+  }
+  i++;
       }
     }
   }
@@ -442,7 +442,7 @@ int main (int argc, char **argv) {
   event_description_s *event_description;
 
   loop = g_main_loop_new(NULL, FALSE);
-  
+
   event_description = malloc(sizeof(event_description_s));
   if (!event_description) {
     return EXIT_FAILURE;
@@ -451,11 +451,13 @@ int main (int argc, char **argv) {
 
   init_description(event_description);
 
-  if (read_config(".", "nuimod.config", event_description) == EXIT_FAILURE) {
+  if (read_config(".", "nuimod.config", event_description) != EXIT_SUCCESS) {
     return EXIT_FAILURE;
   }
 
-  establish_nuimo_comm();
+  if (establish_nuimo_comm() != EXIT_SUCCESS) {
+    return EXIT_FAILURE;
+  };
 
   // Adding additional signals to the GMainLoop
   g_unix_signal_add (SIGINT,  cb_termination, loop);
@@ -463,6 +465,6 @@ int main (int argc, char **argv) {
 
   // Start GMainLoop
   g_main_loop_run(loop);
-  
+
   return EXIT_SUCCESS;
 }

@@ -1,5 +1,13 @@
+2017-01-08  The-Michael-R <The-Michael-R@users.noreply.github.com>
+	* nuimod.c:
+	Added: Improved error handling (a bit)
+
+	* nuimo_communication.c:
+	Added: Improved error handling (a bit)
+
+
 2016-12-28  The-Michael-R <The-Michael-R@users.noreply.github.com>
-	* nuimo.c:
+	* nuimod.c:
 	Added: Improved error handling (a bit)
 
 	* nuimod.c (str_to_pattern):
@@ -12,7 +20,7 @@
 	Still needs some cleanup to be done.
 
 	* nuimo_communication.c (push_buffer):
-	Added: Now the FLY_UPDWN uses also an 'inteligent' buffer strategy.
+	Added: Now the FLY_UPDWN uses also an 'intelligent' buffer strategy.
 
 	* nuimod.c (get_commands):
 	Removed: Missed one development/debug printf before releasing the code.
@@ -23,8 +31,8 @@
 	Changed: Bigger changes to improve responsibility by introducing a buffer
 
 	* nuimo_communication.c:
-	New: Seperated the Nuimo communication from the main code.
-	New: Imlpemented some kind of inteligent buffer. Currently only for Rotation: Accumulation of pending rotation-events
+	New: Separated the Nuimo communication from the main code.
+	New: Implemented some kind of intelligent buffer. Currently only for Rotation: Accumulation of pending rotation-events
 
 
 2016-11-20 The-Michael-R <The-Michael-R@users.noreply.github.com>

@@ -15,7 +15,7 @@ typedef struct {
   unsigned int     entries;
 
   nuimo_message_s *first;
-  nuimo_message_s *last;  
+  nuimo_message_s *last;
 } nuimo_buffer_s;
 
 
@@ -27,7 +27,7 @@ nuimo_buffer_s *nuimo_buffer;
  */
 void init_buffer() {
   DEBUG_PRINT(("init_buffer\n"));
-  
+
   if (nuimo_buffer == NULL) {
     nuimo_buffer = malloc(sizeof(nuimo_buffer_s));
 
@@ -51,7 +51,7 @@ void init_buffer() {
  */
 gboolean pop_buffer(unsigned int *characteristic, unsigned int *direction, int *value) {
   DEBUG_PRINT(("pop_buffer\n"));
-  
+
   nuimo_message_s *old;
 
   if (nuimo_buffer->entries == 0) {
@@ -64,23 +64,23 @@ gboolean pop_buffer(unsigned int *characteristic, unsigned int *direction, int *
   *characteristic = old->characteristic;
   *direction      = old->direction;
   *value          = old->value;
-  
+
   free(old);
-  
+
   nuimo_buffer->entries--;
 
   if (nuimo_buffer->entries == 0) {
     nuimo_buffer->first = NULL;
-    nuimo_buffer->last  = NULL; 
-  }  
-  
+    nuimo_buffer->last  = NULL;
+  }
+
   return TRUE;
 }
 
 
 /**
  * A bit more than the normal pop to a linked list. The function tries to accumulate consectutive ROTATION and FLY_UPDWN
- * events to a single event. The order of events is maintained. For example rot, push rot will be stored in this order and 
+ * events to a single event. The order of events is maintained. For example rot, push rot will be stored in this order and
  * a additional rot will be merget with the last rot.
  *
  * @param characteristic Return value; The characteristic based on ::nuimo_chars_e
@@ -91,7 +91,7 @@ void push_buffer(unsigned int characteristic, unsigned int direction, int value)
   DEBUG_PRINT(("push_buffer\n"));
 
   nuimo_message_s *new;
-  
+
   // Inteligent buffering for fast ocuring events
   if (nuimo_buffer->entries > 0 &&
       characteristic == NUIMO_ROTATION &&
@@ -101,7 +101,7 @@ void push_buffer(unsigned int characteristic, unsigned int direction, int value)
       nuimo_buffer->last->direction = NUIMO_ROTATION_LEFT;
     } else {
       nuimo_buffer->last->direction = NUIMO_ROTATION_RIGHT;
-    }      
+    }
     return;
   }
   if (nuimo_buffer->entries > 0 &&
@@ -112,17 +112,17 @@ void push_buffer(unsigned int characteristic, unsigned int direction, int value)
     nuimo_buffer->last->value = value;
     return;
   }
-  
+
   new = malloc(sizeof(nuimo_message_s));
 
   if (nuimo_buffer->entries == 0) {
     nuimo_buffer->first = new;
-    nuimo_buffer->last  = new; 
+    nuimo_buffer->last  = new;
   } else {
     nuimo_buffer->last->next = new;
     nuimo_buffer->last       = new;
   }
-  
+
   new->characteristic = characteristic;
   new->direction      = direction;
   new->value          = value;
@@ -133,7 +133,7 @@ void push_buffer(unsigned int characteristic, unsigned int direction, int value)
 
 
 /**
- * Receiving a message from Nuimo and add this to the buffer 
+ * Receiving a message from Nuimo and add this to the buffer
  * To install this function use ::nuimo_init_cb_function
  *
  * @param characteristic The characteristic based on ::nuimo_chars_e
@@ -151,7 +151,7 @@ static void cb_nuimo_communication(const uint characteristic, const int value, c
       characteristic > NUIMO_ROTATION) {
     return;
   }
-  
+
   push_buffer(characteristic, dir, value);
 }
 
@@ -159,13 +159,18 @@ static void cb_nuimo_communication(const uint characteristic, const int value, c
  * Initializes all Nuimo based communication tasks. Only the ::nuimo_disable() needs to be covered in the termination
  * call-back function.
  */
-void establish_nuimo_comm() {
+int establish_nuimo_comm() {
   DEBUG_PRINT(("esablish_nuimo_comm\n"));
- 
+
   init_buffer();
-  
+
   nuimo_init_status();
   nuimo_init_cb_function(cb_nuimo_communication, NULL);
-  
-  nuimo_init_bt();  // Not much will happen until the g_main_loop is started
+
+  // Not much will happen until the g_main_loop is started
+  if (nuimo_init_bt() != EXIT_SUCCESS) {
+    return EXIT_FAILURE;
+  };
+
+  return EXIT_SUCCESS;
 }
